@@ -1,9 +1,8 @@
 // ============================================================
-// 🌐 SERVICE WORKER — eWiqenFarm PWA
-// Cache aset statis untuk offline support
+// 🌐 SERVICE WORKER — eWiqenFarm PWA (v7.0.1)
 // ============================================================
 
-const CACHE_NAME = 'ewiqenfarm-v7-0-0';
+const CACHE_NAME = 'ewiqenfarm-v7-0-1';
 const CACHE_ASSETS = [
   '/ewiqenfarm/',
   '/ewiqenfarm/index.html',
@@ -12,12 +11,9 @@ const CACHE_ASSETS = [
   '/ewiqenfarm/icon-512.png'
 ];
 
-// ============================================================
-// INSTALL — Cache semua aset
-// ============================================================
+// INSTALL
 self.addEventListener('install', event => {
   console.log('[SW] Installing...');
-  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -30,12 +26,9 @@ self.addEventListener('install', event => {
   );
 });
 
-// ============================================================
-// ACTIVATE — Hapus cache lama
-// ============================================================
+// ACTIVATE
 self.addEventListener('activate', event => {
   console.log('[SW] Activating...');
-  
   event.waitUntil(
     caches.keys()
       .then(cacheNames => {
@@ -52,26 +45,22 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ============================================================
-// FETCH — Strategi network-first untuk API, cache-first untuk aset
-// ============================================================
+// FETCH
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // Skip request Google Apps Script (harus online)
+  // Skip Google Apps Script
   if (url.hostname.includes('script.google.com') ||
       url.hostname.includes('googleusercontent.com')) {
     return;
   }
   
-  // Skip non-GET
   if (event.request.method !== 'GET') return;
   
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
         if (cachedResponse) {
-          // Return cache, update di background
           fetch(event.request)
             .then(networkResponse => {
               if (networkResponse && networkResponse.status === 200) {
@@ -81,14 +70,11 @@ self.addEventListener('fetch', event => {
               }
             })
             .catch(() => {});
-          
           return cachedResponse;
         }
         
-        // Tidak ada di cache → fetch network
         return fetch(event.request)
           .then(networkResponse => {
-            // Cache kalau 200 OK
             if (networkResponse && networkResponse.status === 200) {
               const responseClone = networkResponse.clone();
               caches.open(CACHE_NAME).then(cache => {
@@ -98,18 +84,14 @@ self.addEventListener('fetch', event => {
             return networkResponse;
           })
           .catch(() => {
-            // Kalau offline & tidak di cache → fallback ke index.html
             if (event.request.mode === 'navigate') {
-              return caches.match('/index.html');
+              return caches.match('/ewiqenfarm/index.html');
             }
           });
       })
   );
 });
 
-// ============================================================
-// MESSAGE — Handle message dari client
-// ============================================================
 self.addEventListener('message', event => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();
