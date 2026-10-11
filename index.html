@@ -4,7 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#00A86B">
+
+<!-- ============================================================
+     PWA META TAGS
+     ============================================================ -->
 <title>eWiqenFarm - Sistem Peternakan & Qurban</title>
+<link rel="manifest" href="manifest.json">
+
+<!-- iOS specific -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="eWiqenFarm">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- Android specific -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="eWiqenFarm">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<!-- Open Graph (untuk share) -->
+<meta property="og:title" content="eWiqenFarm - Sistem Peternakan & Qurban">
+<meta property="og:description" content="Sistem manajemen peternakan dan qurban modern">
+<meta property="og:image" content="icon-512.png">
+<meta property="og:type" content="website">
+
 <style>
   /* Reset */
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,16 +43,16 @@
   /* Iframe wrapper — potong banner GAS di atas */
   .app-iframe {
     position: absolute;
-    top: -50px;              /* Geser ke atas untuk memotong banner */
+    top: -50px;
     left: 0;
     width: 100%;
-    height: calc(100% + 50px); /* Tambah tinggi 50px */
+    height: calc(100% + 50px);
     border: none;
     display: block;
     background: #F5F7F6;
   }
   
-  /* Loading screen (muncul sebelum iframe ready) */
+  /* Loading screen */
   .loading-screen {
     position: fixed;
     inset: 0;
@@ -84,6 +108,94 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+  
+  /* ============================================================
+     INSTALL PROMPT — Custom banner install
+     ============================================================ */
+  .install-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #00A86B, #00C97A);
+    color: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(0, 168, 107, 0.4);
+    z-index: 9998;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    transform: translateY(200px);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  
+  .install-banner.show {
+    display: flex;
+    transform: translateY(0);
+  }
+  
+  .install-banner-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  
+  .install-banner-text {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .install-banner-title {
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  
+  .install-banner-desc {
+    font-size: 11.5px;
+    opacity: 0.9;
+    line-height: 1.3;
+  }
+  
+  .install-banner-btn {
+    background: #fff;
+    color: #00A86B;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  
+  .install-banner-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .install-banner-close {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    flex-shrink: 0;
+    line-height: 1;
+  }
 </style>
 </head>
 <body>
@@ -104,6 +216,17 @@
   loading="eager">
 </iframe>
 
+<!-- Install Prompt Banner -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-icon">📱</div>
+  <div class="install-banner-text">
+    <div class="install-banner-title">Install eWiqenFarm</div>
+    <div class="install-banner-desc">Tambahkan ke layar utama untuk akses cepat</div>
+  </div>
+  <button class="install-banner-btn" onclick="installPWA()">Install</button>
+  <button class="install-banner-close" onclick="dismissInstall()">✕</button>
+</div>
+
 <script>
   // ============================================================
   // Hide loading screen saat iframe selesai load
@@ -111,28 +234,167 @@
   const iframe = document.getElementById('appIframe');
   const loadingScreen = document.getElementById('loadingScreen');
   
-  // Timeout fallback — hide loading setelah 8 detik
   const fallbackTimer = setTimeout(() => {
     loadingScreen.classList.add('hide');
   }, 8000);
   
   iframe.addEventListener('load', () => {
     clearTimeout(fallbackTimer);
-    // Delay sedikit biar smooth
     setTimeout(() => {
       loadingScreen.classList.add('hide');
     }, 500);
   });
   
   // ============================================================
-  // Deteksi device — android/ios untuk height fix
+  // PWA SERVICE WORKER REGISTRATION
   // ============================================================
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if (isMobile) {
-    // Sesuaikan tinggi di mobile (fix keyboard, address bar)
-    window.addEventListener('resize', () => {
-      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => {
+          console.log('[PWA] Service Worker registered:', reg.scope);
+        })
+        .catch(err => {
+          console.warn('[PWA] Service Worker failed:', err);
+        });
     });
+  }
+  
+  // ============================================================
+  // INSTALL PROMPT — BeforeInstallPromptEvent
+  // ============================================================
+  let deferredPrompt = null;
+  const installBanner = document.getElementById('installBanner');
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default mini-infobar
+    e.preventDefault();
+    
+    // Simpan event
+    deferredPrompt = e;
+    
+    // Cek apakah user pernah dismiss
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    const dismissedTime = dismissed ? parseInt(dismissed) : 0;
+    const daysSinceDismiss = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
+    
+    // Tampilkan banner kalau belum dismiss / sudah 7 hari
+    if (!dismissed || daysSinceDismiss > 7) {
+      setTimeout(() => {
+        installBanner.classList.add('show');
+      }, 3000);
+    }
+    
+    console.log('[PWA] Install prompt available');
+  });
+  
+  // ============================================================
+  // INSTALL ACTION
+  // ============================================================
+  async function installPWA() {
+    if (!deferredPrompt) {
+      // Fallback: instruksi manual
+      showInstallInstructions();
+      return;
+    }
+    
+    // Show prompt
+    deferredPrompt.prompt();
+    
+    // Wait for user choice
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[PWA] User choice:', outcome);
+    
+    if (outcome === 'accepted') {
+      installBanner.classList.remove('show');
+      deferredPrompt = null;
+    }
+  }
+  
+  // ============================================================
+  // DISMISS INSTALL
+  // ============================================================
+  function dismissInstall() {
+    installBanner.classList.remove('show');
+    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+  }
+  
+  // ============================================================
+  // MANUAL INSTRUCTIONS (iOS & browser lama)
+  // ============================================================
+  function showInstallInstructions() {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
+    let title = 'Install eWiqenFarm';
+    let steps = '';
+    
+    if (isIOS) {
+      steps = `
+        <div style="text-align:left;font-size:13px;line-height:1.7">
+          <b>iOS (Safari):</b><br>
+          1. Tap tombol <b>Share</b> 📤 (di bawah)<br>
+          2. Scroll → <b>Add to Home Screen</b><br>
+          3. Tap <b>Add</b><br><br>
+          <b>Catatan:</b> Harus pakai <b>Safari</b>, bukan Chrome iOS
+        </div>
+      `;
+    } else if (isAndroid) {
+      steps = `
+        <div style="text-align:left;font-size:13px;line-height:1.7">
+          <b>Android (Chrome):</b><br>
+          1. Tap menu <b>⋮</b> (pojok kanan)<br>
+          2. Pilih <b>Install app</b> atau <b>Add to Home screen</b><br>
+          3. Tap <b>Install</b><br><br>
+          <b>Atau:</b> tunggu banner install muncul
+        </div>
+      `;
+    } else {
+      steps = `
+        <div style="text-align:left;font-size:13px;line-height:1.7">
+          <b>Desktop (Chrome):</b><br>
+          1. Klik ikon <b>⊕</b> di address bar<br>
+          2. Klik <b>Install</b><br><br>
+          <b>Firefox:</b> Tambah via bookmark
+        </div>
+      `;
+    }
+    
+    // Buat modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width:340px">
+        <div class="modal-icon info" style="font-size:24px">📱</div>
+        <div class="modal-title">${title}</div>
+        <div class="modal-message" style="margin-bottom:16px">${steps}</div>
+        <div class="modal-actions">
+          <button class="modal-btn confirm" onclick="this.closest('.modal-overlay').remove()">Mengerti</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  // ============================================================
+  // DETEKSI APP ALREADY INSTALLED
+  // ============================================================
+  window.addEventListener('appinstalled', () => {
+    console.log('[PWA] App installed!');
+    installBanner.classList.remove('show');
+    deferredPrompt = null;
+    
+    // Track install
+    try {
+      localStorage.setItem('pwa-installed', 'true');
+    } catch(e) {}
+  });
+  
+  // Kalau sudah standalone mode, sembunyikan banner
+  if (window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true) {
+    installBanner.classList.remove('show');
+    console.log('[PWA] Running in standalone mode');
   }
 </script>
 
