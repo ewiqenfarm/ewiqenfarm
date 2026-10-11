@@ -4,39 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#00A86B">
-<!-- Splash screen untuk iOS -->
-<link rel="apple-touch-startup-image" href="splash-2048x2732.png" media="(device-width: 1024px)">
-<link rel="apple-touch-startup-image" href="splash-1668x2388.png" media="(device-width: 834px)">
-<link rel="apple-touch-startup-image" href="splash-1536x2048.png" media="(device-width: 768px)">
-<link rel="apple-touch-startup-image" href="splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px)">
-<link rel="apple-touch-startup-image" href="splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px)">
-     
+
 <!-- ============================================================
-     PWA META TAGS
+     PWA META TAGS — FIXED PATHS
      ============================================================ -->
 <title>eWiqenFarm - Sistem Peternakan & Qurban</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/ewiqenfarm/manifest.json">
 
 <!-- iOS specific -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="eWiqenFarm">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="/ewiqenfarm/icon-192.png">
 
 <!-- Android specific -->
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="eWiqenFarm">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/ewiqenfarm/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/ewiqenfarm/icon-512.png">
 
-<!-- Open Graph (untuk share) -->
+<!-- Open Graph -->
 <meta property="og:title" content="eWiqenFarm - Sistem Peternakan & Qurban">
 <meta property="og:description" content="Sistem manajemen peternakan dan qurban modern">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="/ewiqenfarm/icon-512.png">
 <meta property="og:type" content="website">
 
 <style>
-  /* Reset */
   * { margin: 0; padding: 0; box-sizing: border-box; }
   
   html, body {
@@ -46,7 +39,6 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
-  /* Iframe wrapper — potong banner GAS di atas */
   .app-iframe {
     position: absolute;
     top: -50px;
@@ -58,7 +50,6 @@
     background: #F5F7F6;
   }
   
-  /* Loading screen */
   .loading-screen {
     position: fixed;
     inset: 0;
@@ -115,9 +106,6 @@
     to { transform: rotate(360deg); }
   }
   
-  /* ============================================================
-     INSTALL PROMPT — Custom banner install
-     ============================================================ */
   .install-banner {
     position: fixed;
     bottom: 20px;
@@ -252,11 +240,11 @@
   });
   
   // ============================================================
-  // PWA SERVICE WORKER REGISTRATION
+  // PWA SERVICE WORKER — FIXED PATH
   // ============================================================
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
+      navigator.serviceWorker.register('/ewiqenfarm/sw.js')
         .then(reg => {
           console.log('[PWA] Service Worker registered:', reg.scope);
         })
@@ -267,24 +255,19 @@
   }
   
   // ============================================================
-  // INSTALL PROMPT — BeforeInstallPromptEvent
+  // INSTALL PROMPT
   // ============================================================
   let deferredPrompt = null;
   const installBanner = document.getElementById('installBanner');
   
   window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent default mini-infobar
     e.preventDefault();
-    
-    // Simpan event
     deferredPrompt = e;
     
-    // Cek apakah user pernah dismiss
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     const dismissedTime = dismissed ? parseInt(dismissed) : 0;
     const daysSinceDismiss = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
     
-    // Tampilkan banner kalau belum dismiss / sudah 7 hari
     if (!dismissed || daysSinceDismiss > 7) {
       setTimeout(() => {
         installBanner.classList.add('show');
@@ -294,20 +277,13 @@
     console.log('[PWA] Install prompt available');
   });
   
-  // ============================================================
-  // INSTALL ACTION
-  // ============================================================
   async function installPWA() {
     if (!deferredPrompt) {
-      // Fallback: instruksi manual
       showInstallInstructions();
       return;
     }
     
-    // Show prompt
     deferredPrompt.prompt();
-    
-    // Wait for user choice
     const { outcome } = await deferredPrompt.userChoice;
     console.log('[PWA] User choice:', outcome);
     
@@ -317,17 +293,11 @@
     }
   }
   
-  // ============================================================
-  // DISMISS INSTALL
-  // ============================================================
   function dismissInstall() {
     installBanner.classList.remove('show');
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
   }
   
-  // ============================================================
-  // MANUAL INSTRUCTIONS (iOS & browser lama)
-  // ============================================================
   function showInstallInstructions() {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
@@ -339,10 +309,10 @@
       steps = `
         <div style="text-align:left;font-size:13px;line-height:1.7">
           <b>iOS (Safari):</b><br>
-          1. Tap tombol <b>Share</b> 📤 (di bawah)<br>
+          1. Tap tombol <b>Share</b> 📤<br>
           2. Scroll → <b>Add to Home Screen</b><br>
           3. Tap <b>Add</b><br><br>
-          <b>Catatan:</b> Harus pakai <b>Safari</b>, bukan Chrome iOS
+          <b>Catatan:</b> Harus pakai <b>Safari</b>
         </div>
       `;
     } else if (isAndroid) {
@@ -350,9 +320,8 @@
         <div style="text-align:left;font-size:13px;line-height:1.7">
           <b>Android (Chrome):</b><br>
           1. Tap menu <b>⋮</b> (pojok kanan)<br>
-          2. Pilih <b>Install app</b> atau <b>Add to Home screen</b><br>
-          3. Tap <b>Install</b><br><br>
-          <b>Atau:</b> tunggu banner install muncul
+          2. Pilih <b>Install app</b><br>
+          3. Tap <b>Install</b>
         </div>
       `;
     } else {
@@ -360,13 +329,11 @@
         <div style="text-align:left;font-size:13px;line-height:1.7">
           <b>Desktop (Chrome):</b><br>
           1. Klik ikon <b>⊕</b> di address bar<br>
-          2. Klik <b>Install</b><br><br>
-          <b>Firefox:</b> Tambah via bookmark
+          2. Klik <b>Install</b>
         </div>
       `;
     }
     
-    // Buat modal
     const modal = document.createElement('div');
     modal.className = 'modal-overlay show';
     modal.innerHTML = `
@@ -382,21 +349,13 @@
     document.body.appendChild(modal);
   }
   
-  // ============================================================
-  // DETEKSI APP ALREADY INSTALLED
-  // ============================================================
   window.addEventListener('appinstalled', () => {
     console.log('[PWA] App installed!');
     installBanner.classList.remove('show');
     deferredPrompt = null;
-    
-    // Track install
-    try {
-      localStorage.setItem('pwa-installed', 'true');
-    } catch(e) {}
+    try { localStorage.setItem('pwa-installed', 'true'); } catch(e) {}
   });
   
-  // Kalau sudah standalone mode, sembunyikan banner
   if (window.matchMedia('(display-mode: standalone)').matches ||
       window.navigator.standalone === true) {
     installBanner.classList.remove('show');
