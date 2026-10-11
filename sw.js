@@ -5,11 +5,11 @@
 
 const CACHE_NAME = 'ewiqenfarm-v7-0-0';
 const CACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/ewiqenfarm/',
+  '/ewiqenfarm/index.html',
+  '/ewiqenfarm/manifest.json',
+  '/ewiqenfarm/icon-192.png',
+  '/ewiqenfarm/icon-512.png'
 ];
 
 // ============================================================
